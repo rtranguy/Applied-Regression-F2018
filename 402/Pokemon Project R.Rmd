@@ -1,0 +1,112 @@
+---
+title: "Project 1"
+author: "Tanner Koscinski, Richard Tran, James Tang, Shu Jiang"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+UCLA Stats 402
+
+```{r}
+data=pokemon
+names(data) = c('dex', 'name', 'type1', 'type2', 'total', 'hp', 'attack', 'defense', 'spattack',
+                'spdefense', 'speed', 'generation', 'legendary')
+data$generation = as.factor(data$generation)
+types = names(table(data$type1))
+data$bug = F
+data$dark = F
+data$dragon = F
+data$electric = F
+data$fairy = F
+data$fighting = F
+data$fire = F
+data$flying = F
+data$ghost = F
+data$grass = F
+data$ground = F
+data$ice = F
+data$normal = F
+data$poison = F
+data$psychic = F
+data$rock = F
+data$steel = F
+data$water = F
+for(j in 1:length(types)){
+  for(i in 1:dim(data)[1]){
+    if(data$type1[i] == types[j]){
+      data[i, 13 + j] = T
+    }
+  }
+}
+
+hist(data$hp, main = 'Histogram of HP', xlab = 'HP')
+boxplot(data$hp, main = 'Boxplot of HP', ylab = 'HP')
+qqnorm(data$hp, main = 'Normal Quantile Plot of HP', ylab = 'HP')
+
+
+hist(data$attack, main = 'Histogram of Attack', xlab = 'Attack')
+boxplot(data$attack, main = 'Boxplot of Attack', ylab = 'Attack')
+hist(data$spattack, main = 'Histogram of Special Attack', xlab = 'Special Attack')
+boxplot(data$spattack, main = 'Boxplot of Special Attack', ylab = 'Special Attack')
+hist(data$defense, main = 'Histogram of Defense', xlab = 'Defense')
+boxplot(data$defense, main = 'Boxplot of Defense', ylab = 'Defense')
+hist(data$spdefense, main = 'Histogram of Special Defense', xlab = 'Special Defense')
+boxplot(data$spdefense, main = 'Boxplot of Special Defense', ylab = 'Special Defense')
+hist(data$speed, main = 'Histogram of Speed', xlab = 'Speed')
+boxplot(data$speed, main = 'Boxplot of Speed', ylab = 'Speed')
+table(data$generation)
+boxplot(data$hp ~ data$generation, main = 'Boxplot of HP by Generation', ylab = 'HP')
+table(data$legendary)
+boxplot(data$hp ~ data$legendary, main = 'Boxplot of HP by Legendary', ylab = 'HP')
+table(data$type1) + table(data$type2)[2:19]
+boxplot(data$hp ~ data$type1, main = 'Boxplot of HP by Type 1', ylab = 'HP')
+plot(data$hp, data$attack, main = 'HP by Attack', xlab = 'Attack', ylab = 'HP')
+plot(data$hp, data$spattack, main = 'HP by Special Attack', xlab = 'Special Attack', ylab = 'HP')
+plot(data$hp, data$defense, main = 'HP by Defense', xlab = 'Defense', ylab = 'HP')
+plot(data$hp, data$spdefense, main = 'HP by Special Defense', xlab = 'Special Defense', ylab = 'HP')
+plot(data$hp, data$speed, main = 'HP by Speed', xlab = 'Speed', ylab = 'HP')
+summary(data$hp)
+summary(data$attack)
+summary(data$spattack)
+summary(data$defense)
+summary(data$spdefense)
+summary(data$speed)
+tapply(data$hp, data$generation, mean, na.rm = T)
+tapply(data$hp, data$generation, sd, na.rm = T)
+tapply(data$hp, data$generation, var, na.rm = T)
+tapply(data$hp, data$legendary, mean, na.rm = T)
+tapply(data$hp, data$legendary, sd, na.rm = T)
+tapply(data$hp, data$legendary, var, na.rm = T)
+tapply(data$hp, data$type1, mean, na.rm = T)
+tapply(data$hp, data$type1, sd, na.rm = T)
+tapply(data$hp, data$type1, var, na.rm = T)
+
+
+
+m1 = lm(hp ~ attack + defense + spattack + spdefense + speed + generation + legendary + bug + dark
+        + dragon + electric + fairy + fighting + fire + flying + ghost + grass + ground + ice 
+        + normal + poison + psychic + rock + steel + water, data = data)
+m10 = lm(hp ~ attack + defense + spattack + spdefense + speed + legendary + bug + dark
+        + dragon + electric + fairy + fighting + fire + flying + ghost + grass + ground + ice 
+        + normal + poison + psychic + rock + steel + water, data = data)
+summary(m10)
+
+m2=lm(hp~attack+defense+spattack+spdefense+speed,data=data)
+summary(m2)
+
+summary(m1)
+library(MASS)
+stepmodel = stepAIC(m1)
+stepmodelb = stepAIC(m1, k = log(length(m1$residuals)))
+summary(stepmodelb)
+
+
+
+par(mfrow=c(3,1)) 
+hist(data$hp, main = 'Histogram of HP', xlab = 'HP')
+boxplot(data$hp, main = 'Boxplot of HP', ylab = 'HP',horizontal=TRUE) 
+qqnorm(data$hp, main = 'Normal Quantile Plot of HP', ylab = 'HP')
+```

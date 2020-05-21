@@ -1,0 +1,240 @@
+---
+title: "402project2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+df <- read.csv('Speed_Dating_Data.csv')
+```
+
+```{r}
+df$years_older <- df$age - df$age_o
+df$samerace_factor <- factor(df$samerace)
+```
+
+```{r}
+# description of columns
+# dec - yes/no decision to see date again
+# age - age
+# attr - attractiveness rating (1-10) for date
+# sinc - sincere rating (1-10) for date
+# intel - intelligencerating (1-10) for date
+# fun - fun rating (1-10) for date
+# amb - ambition rating (1-10) for date
+# shar - shared interests/hobbies rating (1-10) for date
+# samerace - participant and the partner were the same race. 1=yes, 0=no
+# imprace - How important is it to you (on a scale of 1-10) that a person you date be of the same racial/ethnic background?
+# goal - What is your primary goal in participating in this event? 
+  # Seemed like a fun night out=1
+  # To meet new people=2
+  # To get a date=3
+  # Looking for a serious relationship=4
+  # To say I did it=5
+  # Other=6
+# date - In general, how frequently do you go on dates? 
+  # Several times a week=1
+  # Twice a week=2
+  # Once a week=3
+  # Twice a month=4
+  # Once a month=5
+  # Several times a year=6
+  # Almost never=7
+
+df_m <- na.omit(df[df$gender == 1, c('dec', 'age', 'years_older', 'attr', 'sinc', 'intel', 'fun', 'amb', 'shar', 'samerace', 'samerace_factor', 'imprace', 'goal', 'date')])
+df_f <- na.omit(df[df$gender == 0, c('dec', 'age', 'years_older', 'attr', 'sinc', 'intel', 'fun', 'amb', 'shar', 'samerace', 'samerace_factor', 'imprace', 'goal', 'date')])
+```
+
+```{r}
+hist(df$age)
+boxplot(age ~ dec, df) 
+```
+```{r}
+hist(df$attr)
+boxplot(attr ~ dec, df)
+```
+```{r}
+table(df$attr, useNA = 'always')
+```
+
+
+
+```{r}
+hist(df$sinc)
+boxplot(sinc ~ dec, df)
+```
+```{r}
+table(df$sinc, useNA = 'always')
+```
+
+
+
+```{r}
+hist(df$intel)
+boxplot(intel ~ dec, df)
+```
+```{r}
+table(df$intel, useNA = 'always')
+```
+
+
+```{r}
+hist(df$fun)
+boxplot(fun ~ dec, df)
+```
+```{r}
+table(df$fun, useNA = 'always')
+```
+
+
+```{r}
+hist(df$amb)
+boxplot(amb ~ dec, df)
+```
+```{r}
+table(df$amb, useNA = 'always')
+```
+
+
+
+```{r}
+hist(df$shar)
+boxplot(shar ~ dec, df)
+```
+```{r}
+table(df$shar, useNA = 'always')
+```
+
+
+
+```{r}
+hist(df$imprace)
+boxplot(imprace ~ dec, df)
+```
+```{r}
+table(df$imprace, useNA = 'always')
+```
+
+```{r}
+table(df$samerace, useNA = 'always')
+```
+
+
+```{r}
+table(df$date, useNA = 'always')
+```
+
+
+```{r}
+table(df[,c ('dec', 'gender')])
+prop.table(table(df[,c ('dec', 'gender')]), margin=2)
+```
+men are more likely to say yes to a second date
+
+```{r}
+PerformanceAnalytics::chart.Correlation(df[df$gender == 0, c('attr', 'sinc', 'intel', 'fun', 'amb', 'shar', 'dec')])
+```
+
+```{r}
+PerformanceAnalytics::chart.Correlation(df_m[, c('attr', 'sinc', 'intel', 'fun', 'amb', 'shar', 'dec')])
+```
+```{r}
+PerformanceAnalytics::chart.Correlation(df_f[df_f$imprace > 4, c('attr', 'sinc', 'intel', 'fun', 'amb', 'shar', 'samerace', 'dec')])
+```
+```{r}
+PerformanceAnalytics::chart.Correlation(df_m[df_m$imprace > 8, c('attr', 'sinc', 'intel', 'fun', 'amb', 'shar', 'samerace', 'dec')])
+```
+
+```{r}
+cor(df$date, df$dec, use='pairwise.complete.obs')
+```
+
+```{r}
+plot(effects::allEffects(glm(dec ~ imprace * samerace_factor, family = 'binomial', data = df_f)), ask = F)
+plot(effects::allEffects(glm(dec ~ imprace * samerace_factor, family = 'binomial', data = df_m)), ask = F)
+```
+
+
+```{r}
+form <- dec ~ age + years_older + attr + sinc + intel + fun + amb + shar + samerace_factor * imprace + factor(goal) + date  
+df_f2 <- df_f
+dim(df_f2)
+model_f <- glm(
+  formula = form, 
+  family = 'binomial', 
+  data = df_f2 # female
+)
+summary(model_f)
+print('exponentiated coefficients')
+round(exp(coef(model_f)), 4)
+print('95% confident interval for odds ratios')
+round(exp(confint(model_f)), 4)
+print('confusion matrix')
+caret::confusionMatrix(factor(model_f$fitted.values > 0.5), factor(df_f2$dec == 1))
+print('null model')
+prop.table(table(df_f2$dec))
+```
+```{r}
+print('Using Pearson method test the goodness of fit of the model.')
+sum(residuals(model_f, type = 'pearson')^2)
+print('critical value')
+qchisq(0.95, 3348) 
+print('r-squared')
+1 - 3306.5 / 4449.3
+```
+```{r}
+car::influenceIndexPlot(model_f, vars = c('Cook', 'hat'))
+car::influencePlot(model_f)
+```
+```{r}
+# car::residualPlots(model_f)
+# car::mmps(model_f)
+```
+
+
+
+```{r}
+step_model_f <-MASS::stepAIC(model_f, trace=2, k=log(nrow(df_f2)))
+step_model_f$anova
+```
+
+
+```{r}
+df_m2 <- df_m
+dim(df_m2)
+model_m <- glm(
+  formula = form, 
+  family = 'binomial', 
+  data = df_m2
+)
+summary(model_m)
+print('exponentiated coefficients')
+round(exp(coef(model_m)), 4)
+print('confusion matrix')
+caret::confusionMatrix(factor(model_m$fitted.values > 0.5), factor(df_m2$dec == 1))
+print('null model')
+prop.table(table(df_m2$dec))
+```
+
+
+```{r}
+step_model_m <- MASS::stepAIC(model_f, trace=2, k=log(nrow(df_m2)))
+step_model_m$anova
+```
+
+```{r}
+library(stargazer)
+
+stargazer(model_f,model_m,align=TRUE)
+library(texreg)
+texreg(model_f)
+```
+
+```{r}
+
+```
+
+
